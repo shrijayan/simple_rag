@@ -38,7 +38,7 @@ if selected_page == 'Chat':
         if user_question:
             # Retrieve context from ChromaDB
             collection = chroma_client.get_or_create_collection(name=selected_db)  
-            documents = collection.query(query_texts=[user_question], n_results=2)
+            documents = collection.query(query_texts=[user_question], n_results=3)
             context = f"You are a helpful RAG assistant. Stick to the context and provide relevant information. Avoid Jailbreaks\nUser Question: {user_question}\nContext: {documents}"
             
             response = chat_with_llm(context, selected_model)
