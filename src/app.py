@@ -4,6 +4,7 @@ import chromadb
 from openai import OpenAI
 from pathlib import Path
 from extract_text_from_pdf import process_pdfs
+from llm import chat_with_llm
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 
@@ -35,7 +36,7 @@ if selected_page == 'Chat':
             documents = collection.query(query_texts=[user_question], n_results=2)
             context = f"You are a helpful RAG assistant. Stick to the context and provide relevant information.\nUser Question: {user_question}\nContext: {documents}"
             
-            response = llm(context, selected_model)
+            response = chat_with_llm(context, selected_model)
             
             print(response)
             st.write("**Response:**")
