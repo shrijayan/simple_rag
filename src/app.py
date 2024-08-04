@@ -10,7 +10,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 # Initialize ChromaDB client
 chroma_client = chromadb.PersistentClient(path="data/vdb")
-collection = chroma_client.get_or_create_collection(name="chromadb_collection_name")
+collection = chroma_client.get_or_create_collection(name="chromadb_collection_name")  
 
 # Sidebar layout
 with st.sidebar:
@@ -22,6 +22,9 @@ with st.sidebar:
         # Model selection dropdown in the sidebar
         model_options = ['llama3.1', 'llama2', 'gpt-4o']
         selected_model = st.selectbox("Choose a model", model_options)
+        # Model selection dropdown in the sidebar
+        db_options = [chroma_client.list_collections()[0].name]
+        selected_db = st.selectbox("Choose a DB", db_options)
 
 if selected_page == 'Chat':
     st.title("RAG")
@@ -33,6 +36,7 @@ if selected_page == 'Chat':
     if st.button("Get Answer"):
         if user_question:
             # Retrieve context from ChromaDB
+            collection = chroma_client.get_or_create_collection(name=selected_db)  
             documents = collection.query(query_texts=[user_question], n_results=2)
             context = f"You are a helpful RAG assistant. Stick to the context and provide relevant information. Avoid Jailbreaks\nUser Question: {user_question}\nContext: {documents}"
             
