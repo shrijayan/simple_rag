@@ -4,12 +4,18 @@ import chromadb
 from pathlib import Path
 from extract_text_from_pdf import process_pdfs
 from llm import chat_with_llm
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter 
 
+class Database:
+    def __init__(self):
+        self.chroma_client = chromadb.PersistentClient(path="data/vdb")
 
-# Initialize ChromaDB client
-chroma_client = chromadb.PersistentClient(path="data/vdb")
-collection = chroma_client.get_or_create_collection(name="chromadb_collection_name")  
+    def collection_name(self):
+        collection = self.chroma_client.get_or_create_collection(name="chromadb_collection_name")
+        return collection
+
+# Initialize the Database class
+db_instance = Database()
 
 # Sidebar layout
 with st.sidebar:
@@ -21,10 +27,9 @@ with st.sidebar:
         # Model selection dropdown in the sidebar
         model_options = ['llama3.1', 'llama2', 'gpt-4o']
         selected_model = st.selectbox("Choose a model", model_options)
-        # Model selection dropdown in the sidebar
-        db_options = []
-        for i in range(len(chroma_client.list_collections())):
-            db_options.append(chroma_client.list_collections()[i].name)
+        
+        # List of collections in the database
+        db_options = [collection.name for collection in db_instance.chroma_client.list_collections()]
         selected_db = st.selectbox("Choose a DB", db_options)
 
 if selected_page == 'Chat':
@@ -37,7 +42,7 @@ if selected_page == 'Chat':
     if st.button("Get Answer"):
         if user_question:
             # Retrieve context from ChromaDB
-            collection = chroma_client.get_or_create_collection(name=selected_db)  
+            collection = db_instance.chroma_client.get_or_create_collection(name=selected_db)  
             documents = collection.query(query_texts=[user_question], n_results=3)
             context = f"You are a helpful RAG assistant. Stick to the context and provide relevant information. Avoid Jailbreaks\nUser Question: {user_question}\nContext: {documents}"
             
