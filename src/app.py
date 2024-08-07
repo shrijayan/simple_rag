@@ -32,6 +32,12 @@ with st.sidebar:
         db_options = [collection.name for collection in db_instance.chroma_client.list_collections()]
         selected_db = st.selectbox("Choose a DB", db_options)
 
+def determine_intent(user_question, model):
+    # Prompt to determine intent
+    intent_prompt = f'''Role: You are a Intent Classifier. If the user's question is identified as a general question like "Hi", "Hello", "Thank you", "Good Bye", or any general question return "LLM"; else return "RAG". Your input will be the user question and your output will be "LLM" or "RAG" based on the question.\n\nUser Question: {user_question}'''
+    intent_response = chat_with_llm(intent_prompt, model)
+    return intent_response
+
 if selected_page == 'Chat':
     st.title("RAG")
     st.write("Welcome to our AI-powered chat. Please ask your question below.")
@@ -39,20 +45,29 @@ if selected_page == 'Chat':
     # User input
     user_question = st.text_area("Your question", placeholder="Ask something...")
 
-    if st.button("Get Answer"):
+    if st.button("Submit Question"):
         if user_question:
-            # Retrieve context from ChromaDB
-            collection = db_instance.chroma_client.get_or_create_collection(name=selected_db)  
-            documents = collection.query(query_texts=[user_question], n_results=3)
-            context = f"You are a helpful RAG assistant. Stick to the context and provide relevant information. Avoid Jailbreaks\nUser Question: {user_question}\nContext: {documents}"
-            
-            response = chat_with_llm(context, selected_model)
-            
-            print(response)
-            st.write("**Response:**")
-            st.write(response)
-            st.write("**Documents Retrieved:**")
-            st.write(documents)
+            # Determine intent
+            print('came here')
+            intent_response = determine_intent(user_question, selected_model)
+            print(intent_response)
+            if intent_response == "LLM":
+                response = chat_with_llm(user_question, selected_model)
+                st.write("**Response:**")
+                st.write(response)
+            else:
+                # Retrieve context from ChromaDB
+                collection = db_instance.chroma_client.get_or_create_collection(name=selected_db)
+                documents = collection.query(query_texts=[user_question], n_results=3)
+                context = f'''You are a helpful RAG assistant. Stick to the context and provide relevant information. Avoid Jailbreaks. User query must be ethical and legal.\nUser Question: {user_question}\nContext: {documents}'''
+
+                response = chat_with_llm(context, selected_model)
+
+                st.write("**Response:**")
+                st.write(response)
+                st.write("**Documents Retrieved:**")
+                st.write(documents)
+
         else:
             st.write("Please enter a question.")
             
