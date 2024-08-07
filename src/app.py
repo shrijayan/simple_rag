@@ -6,6 +6,7 @@ from extract_text_from_pdf import process_pdfs
 from llm import chat_with_llm
 from langchain_text_splitters import RecursiveCharacterTextSplitter 
 from intent import determine_intent
+from guardrails import determine_guardrails
 
 class Database:
     def __init__(self):
@@ -44,25 +45,27 @@ if selected_page == 'Chat':
         if user_question:
             # Determine intent
             intent_response = determine_intent(user_question, selected_model)
-            if intent_response == "LLM":
-                response = chat_with_llm(user_question, selected_model)
-                st.write("**Response:**")
-                st.write(response)
+            guardrails_response = determine_guardrails(user_question, selected_model)
+            if guardrails_response == "Yes":
+                if intent_response == "LLM":
+                    response = chat_with_llm(user_question, selected_model)
+                    st.write("**Response:**")
+                    st.write(response)
+                else:
+                    # Retrieve context from ChromaDB
+                    collection = db_instance.chroma_client.get_or_create_collection(name=selected_db)
+                    documents = collection.query(query_texts=[user_question], n_results=3)
+                    context = f'''You are a helpful RAG assistant. Stick to the context and provide relevant information. Avoid Jailbreaks. User query must be ethical and legal.\nUser Question: {user_question}\nContext: {documents}'''
+
+                    response = chat_with_llm(context, selected_model)
+
+                    st.write("**Response:**")
+                    st.write(response)
+                    st.write("**Documents Retrieved:**")
+                    st.write(documents)
+
             else:
-                # Retrieve context from ChromaDB
-                collection = db_instance.chroma_client.get_or_create_collection(name=selected_db)
-                documents = collection.query(query_texts=[user_question], n_results=3)
-                context = f'''You are a helpful RAG assistant. Stick to the context and provide relevant information. Avoid Jailbreaks. User query must be ethical and legal.\nUser Question: {user_question}\nContext: {documents}'''
-
-                response = chat_with_llm(context, selected_model)
-
-                st.write("**Response:**")
-                st.write(response)
-                st.write("**Documents Retrieved:**")
-                st.write(documents)
-
-        else:
-            st.write("Please enter a question.")
+                st.write("Please enter a question.")
             
 elif selected_page == 'Database':
     def save_uploaded_file(uploaded_file):
