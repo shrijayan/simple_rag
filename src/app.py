@@ -5,6 +5,7 @@ from pathlib import Path
 from extract_text_from_pdf import process_pdfs
 from llm import chat_with_llm
 from langchain_text_splitters import RecursiveCharacterTextSplitter 
+from intent import determine_intent
 
 class Database:
     def __init__(self):
@@ -32,12 +33,6 @@ with st.sidebar:
         db_options = [collection.name for collection in db_instance.chroma_client.list_collections()]
         selected_db = st.selectbox("Choose a DB", db_options)
 
-def determine_intent(user_question, model):
-    # Prompt to determine intent
-    intent_prompt = f'''Role: You are a Intent Classifier. If the user's question is identified as a general question like "Hi", "Hello", "Thank you", "Good Bye", or any general question return "LLM"; else return "RAG". Your input will be the user question and your output will be "LLM" or "RAG" based on the question.\n\nUser Question: {user_question}'''
-    intent_response = chat_with_llm(intent_prompt, model)
-    return intent_response
-
 if selected_page == 'Chat':
     st.title("RAG")
     st.write("Welcome to our AI-powered chat. Please ask your question below.")
@@ -48,9 +43,7 @@ if selected_page == 'Chat':
     if st.button("Submit Question"):
         if user_question:
             # Determine intent
-            print('came here')
             intent_response = determine_intent(user_question, selected_model)
-            print(intent_response)
             if intent_response == "LLM":
                 response = chat_with_llm(user_question, selected_model)
                 st.write("**Response:**")
