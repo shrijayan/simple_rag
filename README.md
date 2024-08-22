@@ -8,6 +8,12 @@ python3 -m venv venv_rag
 source venv_rag/bin/activate
 pip install -r requirements.txt
 ```
+### Inatall Ollama - in their Website
+
+After installing
+```
+ollama pull llama3.1
+```
 (^ Run above only for the first time)
 
 (⌄ Run below only for the rest of the times)
